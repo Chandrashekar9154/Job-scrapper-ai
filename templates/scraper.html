@@ -1,0 +1,598 @@
+<!-- job_scraper_app/templates/scraper.html -->
+{% extends "base.html" %} {% block content %}
+<h2 class="mb-4">Scrape Jobs</h2>
+
+<!-- Resume Upload Notice -->
+<div class="alert alert-info mb-4">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-info-circle me-2"></i>
+    <div>
+      <strong
+        >Before scraping jobs, upload your resume for AI optimization!</strong
+      >
+      <br />
+      <small class="text-muted">
+        Go to <a href="/profile" class="alert-link">Profile</a> page to upload
+        your resume. This enables AI-powered resume optimization for each job
+        you scrape.
+      </small>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-4 shadow">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0"><i class="bi bi-briefcase"></i> Indeed Job Scraper</h4>
+      </div>
+      <div class="card-body">
+        <div class="job-status-container mb-3">
+          <div id="indeed-status-box">
+            <div class="d-flex justify-content-between mb-2">
+              <span
+                ><strong>Status:</strong>
+                <span id="indeed-status">Idle</span></span
+              >
+            </div>
+            <div class="progress mb-2">
+              <div
+                id="indeed-progress"
+                class="progress-bar"
+                role="progressbar"
+                style="width: 0%"
+              ></div>
+            </div>
+            <p id="indeed-message" class="small text-muted"></p>
+          </div>
+        </div>
+
+        <form id="indeed-form" action="/start_indeed_scraper" method="post">
+          <div class="mb-3">
+            <label for="indeed_email" class="form-label">Indeed Email</label>
+            <input
+              type="email"
+              class="form-control"
+              id="indeed_email"
+              name="indeed_email"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="indeed_password" class="form-label"
+              >Indeed Password</label
+            >
+            <input
+              type="password"
+              class="form-control"
+              id="indeed_password"
+              name="indeed_password"
+              required
+            />
+          </div>
+
+          <h5 class="mt-4 mb-3">Job Search Parameters</h5>
+          <div id="indeed-search-params">
+            <div class="row mb-2 search-row">
+              <div class="col-md-5">
+                <input
+                  type="text"
+                  class="form-control"
+                  name="position[]"
+                  placeholder="Job Title"
+                  required
+                />
+              </div>
+              <div class="col-md-5">
+                <input
+                  type="text"
+                  class="form-control"
+                  name="location[]"
+                  placeholder="Location"
+                  required
+                />
+              </div>
+              <div class="col-md-2">
+                <button
+                  type="button"
+                  class="btn btn-outline-danger remove-search"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <button
+              type="button"
+              id="add-indeed-search"
+              class="btn btn-sm btn-outline-primary"
+            >
+              <i class="bi bi-plus-circle"></i> Add Search
+            </button>
+          </div>
+
+          <!-- Advanced Filters Section -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0">
+                <i class="bi bi-funnel"></i> Advanced Filters
+              </h6>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                id="toggle-indeed-filters"
+                onclick="toggleFilters('indeed-filters')"
+              >
+                Show/Hide
+              </button>
+            </div>
+            <div
+              id="indeed-filters"
+              class="border rounded p-3"
+              style="display: none"
+            >
+              <div class="row">
+                <div class="col-md-6 mb-2">
+                  <label for="salary_range" class="form-label"
+                    >Salary Range</label
+                  >
+                  <select
+                    class="form-select"
+                    name="salary_range"
+                    id="salary_range"
+                  >
+                    <option value="">All Salaries</option>
+                    <option value="30000-40000">$30,000 - $40,000</option>
+                    <option value="40000-50000">$40,000 - $50,000</option>
+                    <option value="50000-60000">$50,000 - $60,000</option>
+                    <option value="60000-70000">$60,000 - $70,000</option>
+                    <option value="70000-80000">$70,000 - $80,000</option>
+                    <option value="80000-90000">$80,000 - $90,000</option>
+                    <option value="90000-100000">$90,000 - $100,000</option>
+                    <option value="100000+">$100,000+</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label for="remote_work" class="form-label"
+                    >Remote Work</label
+                  >
+                  <select
+                    class="form-select"
+                    name="remote_work"
+                    id="remote_work"
+                  >
+                    <option value="">All jobs</option>
+                    <option value="remote">Remote</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="on-site">On-site</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label for="experience_level" class="form-label"
+                    >Experience Level</label
+                  >
+                  <select
+                    class="form-select"
+                    name="experience_level"
+                    id="experience_level"
+                  >
+                    <option value="">All Experience Levels</option>
+                    <option value="entry">Entry Level</option>
+                    <option value="mid">Mid Level</option>
+                    <option value="senior">Senior Level</option>
+                    <option value="executive">Executive Level</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label for="education_level" class="form-label"
+                    >Education Level</label
+                  >
+                  <select
+                    class="form-select"
+                    name="education_level"
+                    id="education_level"
+                  >
+                    <option value="">All Education Levels</option>
+                    <option value="high_school">High School</option>
+                    <option value="associate">Associate's Degree</option>
+                    <option value="bachelor">Bachelor's Degree</option>
+                    <option value="master">Master's Degree</option>
+                    <option value="doctorate">Doctorate</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label for="date_posted" class="form-label"
+                    >Date Posted</label
+                  >
+                  <select
+                    class="form-select"
+                    name="date_posted"
+                    id="date_posted"
+                  >
+                    <option value="">Jobs you haven't seen</option>
+                    <option value="1">Last 24 hours</option>
+                    <option value="3">Last 3 days</option>
+                    <option value="7">Last week</option>
+                    <option value="14">Last 2 weeks</option>
+                    <option value="30">Last month</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="indeed-submit-btn">
+            <i class="bi bi-search"></i> Start Indeed Scraper
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card mb-4 shadow">
+      <div class="card-header bg-info text-white">
+        <h4 class="mb-0">
+          <i class="bi bi-linkedin"></i> LinkedIn Job Scraper
+        </h4>
+      </div>
+      <div class="card-body">
+        <div class="job-status-container mb-3">
+          <div id="linkedin-status-box">
+            <div class="d-flex justify-content-between mb-2">
+              <span
+                ><strong>Status:</strong>
+                <span id="linkedin-status">Idle</span></span
+              >
+            </div>
+            <div class="progress mb-2">
+              <div
+                id="linkedin-progress"
+                class="progress-bar bg-info"
+                role="progressbar"
+                style="width: 0%"
+              ></div>
+            </div>
+            <p id="linkedin-message" class="small text-muted"></p>
+          </div>
+        </div>
+
+        <form id="linkedin-form" action="/start_linkedin_scraper" method="post">
+          <div class="mb-3">
+            <label for="linkedin_token" class="form-label"
+              >LinkedIn Authentication Token (li_at)</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="linkedin_token"
+              name="linkedin_token"
+              required
+            />
+            <div class="form-text">
+              The li_at cookie from your LinkedIn account
+            </div>
+          </div>
+
+          <h5 class="mt-4 mb-3">Job Search Parameters</h5>
+          <div id="linkedin-search-params">
+            <div class="row mb-2 search-row">
+              <div class="col-md-5">
+                <input
+                  type="text"
+                  class="form-control"
+                  name="position[]"
+                  placeholder="Job Title"
+                  required
+                />
+              </div>
+              <div class="col-md-5">
+                <input
+                  type="text"
+                  class="form-control"
+                  name="location[]"
+                  placeholder="Location"
+                  required
+                />
+              </div>
+              <div class="col-md-2">
+                <button
+                  type="button"
+                  class="btn btn-outline-danger remove-search"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <button
+              type="button"
+              id="add-linkedin-search"
+              class="btn btn-sm btn-outline-info"
+            >
+              <i class="bi bi-plus-circle"></i> Add Search
+            </button>
+          </div>
+
+          <!-- Advanced Filters Section -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0">
+                <i class="bi bi-funnel"></i> Advanced Filters
+              </h6>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                id="toggle-linkedin-filters"
+                onclick="toggleFilters('linkedin-filters')"
+              >
+                Show/Hide
+              </button>
+            </div>
+            <div
+              id="linkedin-filters"
+              class="border rounded p-3"
+              style="display: none"
+            >
+              <div class="row">
+                <div class="col-md-6 mb-2">
+                  <label for="linkedin_sort_by" class="form-label"
+                    >Sort By</label
+                  >
+                  <select
+                    class="form-select"
+                    name="sort_by"
+                    id="linkedin_sort_by"
+                  >
+                    <option value="">Most Relevant</option>
+                    <option value="recent">Most Recent</option>
+                    <option value="relevance">Most Relevant</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label for="linkedin_date_posted" class="form-label"
+                    >Date Posted</label
+                  >
+                  <select
+                    class="form-select"
+                    name="date_posted"
+                    id="linkedin_date_posted"
+                  >
+                    <option value="">Any Time</option>
+                    <option value="1">Past 24 hours</option>
+                    <option value="3">Past 3 days</option>
+                    <option value="7">Past week</option>
+                    <option value="14">Past 2 weeks</option>
+                    <option value="30">Past month</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label for="linkedin_job_type" class="form-label"
+                    >Job Type</label
+                  >
+                  <select
+                    class="form-select"
+                    name="job_type[]"
+                    id="linkedin_job_type"
+                    multiple
+                  >
+                    <option value="full_time">Full-time</option>
+                    <option value="part_time">Part-time</option>
+                    <option value="contract">Contract</option>
+                    <option value="internship">Internship</option>
+                    <option value="temporary">Temporary</option>
+                  </select>
+                  <div class="form-text">Hold Ctrl/Cmd to select multiple</div>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label for="linkedin_experience_level" class="form-label"
+                    >Experience Level</label
+                  >
+                  <select
+                    class="form-select"
+                    name="experience_level"
+                    id="linkedin_experience_level"
+                  >
+                    <option value="">All Experience Levels</option>
+                    <option value="entry">Entry Level</option>
+                    <option value="associate">Associate</option>
+                    <option value="mid_senior">Mid-Senior Level</option>
+                    <option value="director">Director</option>
+                    <option value="executive">Executive</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label for="linkedin_remote_work" class="form-label"
+                    >Remote Work</label
+                  >
+                  <select
+                    class="form-select"
+                    name="remote_work"
+                    id="linkedin_remote_work"
+                  >
+                    <option value="">All jobs</option>
+                    <option value="remote">Remote</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="on_site">On-site</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <label for="linkedin_salary_range" class="form-label"
+                    >Salary Range</label
+                  >
+                  <select
+                    class="form-select"
+                    name="salary_range"
+                    id="linkedin_salary_range"
+                  >
+                    <option value="">All Salaries</option>
+                    <option value="40000">$40,000+</option>
+                    <option value="60000">$60,000+</option>
+                    <option value="80000">$80,000+</option>
+                    <option value="100000">$100,000+</option>
+                    <option value="120000">$120,000+</option>
+                    <option value="140000">$140,000+</option>
+                    <option value="160000">$160,000+</option>
+                    <option value="200000">$200,000+</option>
+                  </select>
+                </div>
+                <div class="col-md-12 mb-2">
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      name="has_verifications"
+                      id="linkedin_has_verifications"
+                      value="true"
+                      checked
+                    />
+                    <label
+                      class="form-check-label"
+                      for="linkedin_has_verifications"
+                    >
+                      Has Verifications
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-info text-white"
+            id="linkedin-submit-btn"
+          >
+            <i class="bi bi-search"></i> Start LinkedIn Scraper
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Add search row buttons
+    document
+      .getElementById("add-indeed-search")
+      .addEventListener("click", function () {
+        addSearchRow("indeed-search-params");
+      });
+
+    document
+      .getElementById("add-linkedin-search")
+      .addEventListener("click", function () {
+        addSearchRow("linkedin-search-params");
+      });
+
+    // Handle remove search buttons
+    document.addEventListener("click", function (e) {
+      if (e.target.closest(".remove-search")) {
+        const row = e.target.closest(".search-row");
+        if (
+          row &&
+          row.parentElement.querySelectorAll(".search-row").length > 1
+        ) {
+          row.remove();
+        }
+      }
+    });
+
+    // Start polling for status updates
+    pollStatus();
+  });
+
+  function addSearchRow(containerId) {
+    const container = document.getElementById(containerId);
+    const newRow = container.querySelector(".search-row").cloneNode(true);
+
+    // Clear inputs
+    newRow.querySelectorAll("input").forEach((input) => {
+      input.value = "";
+    });
+
+    container.appendChild(newRow);
+  }
+
+  function toggleFilters(filterId) {
+    const filterDiv = document.getElementById(filterId);
+    const buttonId = "toggle-" + filterId;
+    const button = document.getElementById(buttonId);
+
+    if (filterDiv.style.display === "none") {
+      filterDiv.style.display = "block";
+      if (button) button.textContent = "Hide";
+    } else {
+      filterDiv.style.display = "none";
+      if (button) button.textContent = "Show";
+    }
+  }
+
+  function pollStatus() {
+    fetch("/status")
+      .then((response) => response.json())
+      .then((data) => {
+        updateStatusUI("indeed", data.indeed_scraping);
+        updateStatusUI("linkedin", data.linkedin_scraping);
+
+        // Poll again in 2 seconds
+        setTimeout(pollStatus, 2000);
+      })
+      .catch((error) => {
+        console.error("Error polling status:", error);
+        setTimeout(pollStatus, 5000); // Try again after 5 seconds
+      });
+  }
+
+  function updateStatusUI(prefix, jobData) {
+    const statusElem = document.getElementById(`${prefix}-status`);
+    const progressElem = document.getElementById(`${prefix}-progress`);
+    const messageElem = document.getElementById(`${prefix}-message`);
+
+    // Update status text and color
+    statusElem.textContent =
+      jobData.status.charAt(0).toUpperCase() + jobData.status.slice(1);
+    statusElem.className = "";
+
+    if (jobData.status === "running") {
+      statusElem.classList.add("text-primary");
+      progressElem.classList.add(
+        "progress-bar-striped",
+        "progress-bar-animated"
+      );
+    } else if (jobData.status === "completed") {
+      statusElem.classList.add("text-success");
+      progressElem.classList.remove(
+        "progress-bar-striped",
+        "progress-bar-animated"
+      );
+    } else if (jobData.status === "failed") {
+      statusElem.classList.add("text-danger");
+      progressElem.classList.remove(
+        "progress-bar-striped",
+        "progress-bar-animated"
+      );
+    } else {
+      // Idle
+      statusElem.classList.add("text-muted");
+      progressElem.classList.remove(
+        "progress-bar-striped",
+        "progress-bar-animated"
+      );
+    }
+
+    // Update progress bar
+    progressElem.style.width = `${jobData.progress}%`;
+    progressElem.setAttribute("aria-valuenow", jobData.progress);
+
+    // Update message
+    messageElem.textContent = jobData.message;
+  }
+</script>
+{% endblock %}
